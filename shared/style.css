@@ -1,0 +1,5 @@
+/* Project-wide custom styles — Tailwind CDN handles utilities */
+
+body {
+  min-height: 100vh;
+}
