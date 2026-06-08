@@ -22,6 +22,41 @@
   <main class="max-w-5xl mx-auto px-4 py-10">
     <h1 class="text-2xl font-bold mb-6">Admin Dashboard</h1>
 
+    <!-- Filters -->
+    <div class="bg-white border border-gray-200 rounded-lg px-4 py-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div>
+        <label for="filterLocation" class="block text-xs font-medium text-gray-500 mb-1">Location</label>
+        <select id="filterLocation" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">All</option>
+          <option value="District 1">District 1</option>
+          <option value="District 3">District 3</option>
+          <option value="Thao Dien">Thao Dien</option>
+        </select>
+      </div>
+      <div>
+        <label for="filterMinRating" class="block text-xs font-medium text-gray-500 mb-1">Min rating</label>
+        <select id="filterMinRating" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">Any</option>
+          <option value="1">1 ★</option>
+          <option value="2">2 ★</option>
+          <option value="3">3 ★</option>
+          <option value="4">4 ★</option>
+          <option value="5">5 ★</option>
+        </select>
+      </div>
+      <div>
+        <label for="filterDateFrom" class="block text-xs font-medium text-gray-500 mb-1">Date from</label>
+        <input id="filterDateFrom" type="date" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label for="filterDateTo" class="block text-xs font-medium text-gray-500 mb-1">Date to</label>
+        <input id="filterDateTo" type="date" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+    </div>
+
+    <!-- Count -->
+    <p id="countLabel" class="text-sm text-gray-500 mb-3"></p>
+
     <div id="tableWrapper"></div>
   </main>
 
@@ -47,12 +82,37 @@
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
+    function applyFilters(entries) {
+      const location  = document.getElementById("filterLocation").value;
+      const minRating = parseInt(document.getElementById("filterMinRating").value) || 0;
+      const dateFrom  = document.getElementById("filterDateFrom").value;
+      const dateTo    = document.getElementById("filterDateTo").value;
+
+      return entries.filter(e => {
+        if (location && e.location !== location) return false;
+        if (minRating && e.rating < minRating) return false;
+        if (dateFrom && e.submittedAt.slice(0, 10) < dateFrom) return false;
+        if (dateTo   && e.submittedAt.slice(0, 10) > dateTo)   return false;
+        return true;
+      });
+    }
+
     function render() {
-      const entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      const all     = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      const entries = applyFilters(all);
       const wrapper = document.getElementById("tableWrapper");
+      const countEl = document.getElementById("countLabel");
+
+      if (all.length === 0) {
+        countEl.textContent = "";
+        wrapper.innerHTML = '<p class="text-gray-500 text-sm">No feedback yet</p>';
+        return;
+      }
+
+      countEl.textContent = `Showing ${entries.length} of ${all.length} feedback${all.length !== 1 ? "s" : ""}`;
 
       if (entries.length === 0) {
-        wrapper.innerHTML = '<p class="text-gray-500 text-sm">No feedback yet</p>';
+        wrapper.innerHTML = '<p class="text-gray-500 text-sm">No feedback matches your filters</p>';
         return;
       }
 
@@ -87,6 +147,10 @@
     }
 
     render();
+
+    ["filterLocation", "filterMinRating", "filterDateFrom", "filterDateTo"].forEach(id => {
+      document.getElementById(id).addEventListener("change", render);
+    });
   </script>
 </body>
 </html>
