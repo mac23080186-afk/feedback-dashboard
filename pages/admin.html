@@ -67,7 +67,7 @@
 
   <script src="../shared/app.js"></script>
   <script>
-    const STORAGE_KEY = "feedbackEntries";
+    let allEntries = [];
 
     function formatDate(iso) {
       const d = new Date(iso);
@@ -103,7 +103,7 @@
     }
 
     function render() {
-      const all     = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      const all     = allEntries;
       const entries = applyFilters(all);
       const wrapper = document.getElementById("tableWrapper");
       const countEl = document.getElementById("countLabel");
@@ -121,7 +121,7 @@
         return;
       }
 
-      const sorted = entries.slice().sort((a, b) => b.id - a.id);
+      const sorted = entries.slice().sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
 
       function rowBg(rating) {
         if (rating <= 2) return "bg-red-100";
@@ -158,8 +158,8 @@
     }
 
     function exportCSV() {
-      const all     = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      const entries = applyFilters(all).slice().sort((a, b) => b.id - a.id);
+      const all     = allEntries;
+      const entries = applyFilters(all).slice().sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
 
       if (entries.length === 0) {
         alert("Nothing to export");
@@ -193,7 +193,20 @@
       URL.revokeObjectURL(url);
     }
 
-    render();
+    async function loadFeedback() {
+      try {
+        const res = await fetch("/api/feedback");
+        if (!res.ok) throw new Error("Server error");
+        allEntries = await res.json();
+      } catch {
+        document.getElementById("tableWrapper").innerHTML =
+          '<p class="text-red-500 text-sm">Failed to load feedback. Is the server running?</p>';
+        return;
+      }
+      render();
+    }
+
+    loadFeedback();
 
     ["filterLocation", "filterMinRating", "filterDateFrom", "filterDateTo"].forEach(id => {
       document.getElementById(id).addEventListener("change", render);

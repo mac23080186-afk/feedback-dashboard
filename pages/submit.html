@@ -93,8 +93,6 @@
 
   <script src="../shared/app.js"></script>
   <script>
-    const STORAGE_KEY = "feedbackEntries";
-
     // Build star rating buttons
     const ratingGroup = document.getElementById("ratingGroup");
     let selectedRating = 0;
@@ -120,7 +118,7 @@
     }
 
     // Form submission
-    document.getElementById("feedbackForm").addEventListener("submit", function (e) {
+    document.getElementById("feedbackForm").addEventListener("submit", async function (e) {
       e.preventDefault();
 
       const comment = document.getElementById("comment").value.trim();
@@ -143,17 +141,26 @@
       if (!valid) return;
 
       const entry = {
-        id: Date.now(),
         name: document.getElementById("name").value.trim() || null,
         location: document.getElementById("location").value || null,
         rating: selectedRating,
         comment,
-        submittedAt: new Date().toISOString(),
       };
 
-      const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      existing.push(entry);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+      try {
+        const res = await fetch("/api/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(entry),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(`${res.status}: ${body.error || res.statusText}`);
+        }
+      } catch (err) {
+        alert("Failed to submit feedback.\n\nError: " + err.message);
+        return;
+      }
 
       // Reset form
       this.reset();
