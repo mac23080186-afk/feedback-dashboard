@@ -2,7 +2,6 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const admin = require("firebase-admin");
-const path = require("path");
 
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -18,7 +17,6 @@ const COLLECTION = "feedback";
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
 
 // POST /api/feedback — save a new entry
 app.post("/api/feedback", async (req, res) => {
